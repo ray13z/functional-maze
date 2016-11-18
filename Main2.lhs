@@ -1,0 +1,173 @@
+> import Geography
+> import MyMaze
+
+======================================================================
+
+Draw a maze.
+
+***************************************
+*              Question 2             *
+* Complete the definition of drawMaze *
+***************************************
+
+> drawMaze :: MyMaze -> IO()
+> drawMaze maze = (putStr . showMaze) maze
+
+drawMaze maze = putStr("Isn't that a-maze-ing!\n")
+
+> showMaze :: MyMaze -> String
+> showMaze maze = showBorderRow maze ++ showRows ((snd (sizeOf maze))-1) maze ++ showBorderRow maze
+
+> showBorderRow maze = "+" ++ replicateStr (fst (sizeOf maze)) "--+" ++ "\n"
+
+> showRows :: Int -> MyMaze -> String
+> showRows n maze 
+> 	| n == 0 = "|" ++ showNSWalls n maze ++"\n" -- Last line, only print N-S walls
+> 	| otherwise = "|" ++  showNSWalls n maze ++ "\n" ++ "+" ++ showEWWalls n maze ++ "\n" ++ showRows (n-1) maze -- Print N-S walls followed by E-W walls on the next line
+
+> showNSWalls :: Int -> MyMaze -> String
+> showNSWalls row maze = concat (map (\x -> if x then "  |" else "   ") [hasWall maze (x,row) E | x <- [0..cols]]) 
+> 	where cols = fst(sizeOf maze) - 1
+
+> showEWWalls :: Int -> MyMaze -> String
+> showEWWalls row maze = concat (map (\x -> if x then "--+" else "  +") [hasWall maze (x,row) S | x <- [0..cols]])
+>       where cols = fst(sizeOf maze) - 1
+
+> replicateStr :: Int -> String -> String
+> replicateStr n str
+> 	| n == 0 = ""
+> 	| otherwise = str ++ replicateStr (n-1) str
+
+
+
+======================================================================
+
+Solve the maze, giving a result of type:
+
+> type Path = [Direction]
+
+***************************************
+*            Questions 3--4           *
+*     Complete the definition of      *
+*              solveMaze              *
+***************************************
+
+> solveMaze :: MyMaze -> Place -> Place -> Path
+> solveMaze maze start target = fastSolveMazeIter maze target queue visited
+> 	where 	queue = [(start, [])]
+> 		visited = []
+
+> fastSolveMazeIter :: MyMaze -> Place -> [PartialSolution] -> [Place] -> Path
+> fastSolveMazeIter maze target q visited
+>       | currentPlace == target = currentPath
+> 	| currentPlace `elem` visited = if (length q == 1) then [] else fastSolveMazeIter maze target (tail q) visited -- [] if q is empty, else continue
+>       | otherwise = fastSolveMazeIter maze target ((tail q) ++ (possibleMoves maze currentPlace currentPath)) (currentPlace:visited)
+>       where   currentPlace = fst (head q)
+>               currentPath = snd (head q)
+
+> solveMazeIter :: MyMaze -> Place -> [PartialSolution] -> Path
+> solveMazeIter maze target q 
+> 	| currentPlace == target = currentPath
+> 	| otherwise = solveMazeIter maze target ((tail q) ++ (possibleMoves maze currentPlace currentPath) )
+> 	where 	currentPlace = fst (head q)
+> 		currentPath = snd (head q)
+
+> visited :: [Place]
+> visited = []
+
+> type PartialSolution = (Place, Path)
+> queue :: [PartialSolution]
+> queue = []
+
+> possibleMoves :: MyMaze -> Place -> Path -> [PartialSolution]
+> possibleMoves maze currentPlace currentPath = filter (validPos maze) [((x-1,y),(currentPath ++ [W])), ((x,y-1),(currentPath ++ [S])), ((x+1,y),(currentPath ++ [E])), ((x,y+1),(currentPath ++ [N]))]
+> 	where (x,y) = currentPlace
+
+> validPos :: MyMaze -> PartialSolution -> Bool
+> validPos maze nextPos = (x<m && y<n) && (not (hasWall maze (x,y) d))
+> 	where 	(m,n) = sizeOf maze
+>		(x,y) = fst nextPos
+> 		d = opposite (last (snd nextPos))
+ 
+
+======================================================================
+
+Some test mazes.  In both cases, the task is to find a path from the bottom
+left corner to the top right.
+
+First a small one
+
+> smallMaze :: MyMaze
+> smallMaze = 
+>   let walls = [((0,0), N), ((2,2), E), ((2,1),E), ((1,0),E), 
+>                ((1,2), E), ((1,1), N)]
+>   in makeMaze (4,3) (map fst (filter (isDir N) walls)) [] (map fst (filter (isDir E) walls)) []
+
+Now a large one.  Define a function to produce a run of walls:
+
+> run (x,y) n E = [((x,y+i),E) | i <- [0..n-1]]
+> run (x,y) n N = [((x+i,y),N) | i <- [0..n-1]]
+
+And here's the maze.
+
+> largeMaze :: MyMaze 
+> largeMaze =
+>   let walls = 
+>         run (0,0) 3 E ++ run (1,1) 3 E ++ [((1,3),N)] ++ run (0,4) 5 E ++
+>         run (2,0) 5 E ++ [((2,4),N)] ++ run (1,5) 3 E ++
+>         run (1,8) 3 N ++ run (2,6) 3 E ++
+>         run (3,1) 7 E ++ run (4,0) 4 N ++ run (4,1) 5 E ++ run (5,2) 3 N ++
+>         run (4,6) 2 N ++ run (5,4) 3 E ++ run (6,3) 5 N ++ run (8,0) 4 E ++
+>         run (6,1) 3 N ++ run (0,9) 3 N ++ run (1,10) 3 N ++ run (0,11) 3 N ++
+>         run (1,12) 6 N ++ run (3,9) 4 E ++ run (4,11) 2 N ++
+>         run (5,9) 3 E ++ run (4,8) 3 E ++ run (5,7) 5 N ++ run (6,4) 9 E ++
+>         run (7,5) 3 N ++ run (8,4) 4 N ++ run (8,6) 3 N ++ run (10,5) 7 E ++
+>         run (9,8) 3 E ++ run (8,9) 3 E ++ run (7,8) 3 E ++ run (8,11) 3 N ++
+>         run (0,13) 5 N ++ run (4,14) 2 E ++ run (0,15) 2 E ++ 
+>         run (1,14) 3 N ++ run (3,15) 2 E ++ run (0,17) 2 N ++ 
+>         run (1,16) 2 E ++ run (2,15) 1 N ++ run (3,16) 3 N ++
+>         run (2,17) 2 E ++ run (1,18) 6 N ++ run (4,17) 3 N ++ 
+>         run (6,14) 7 E ++ run (5,13) 4 E ++ run (7,12) 2 E ++
+>         run (8,13) 3 N ++ run (7,14) 3 N ++ run (10,14) 2 E ++
+>         run (8,15) 5 N ++ run (7,16) 5 N ++ run (9,1) 2 E ++
+>         run (10,0) 12 N ++ run (21,1) 1 E ++ run (10,2) 2 E ++
+>         run (11,1) 7 N ++ run (17,1) 1 E ++ run (11,3) 3 E ++
+>         run (12,2) 7 N ++ run (18,2) 2 E ++ run (19,1) 2 N ++
+>         run (15,3) 3 N ++ run (14,4) 3 E ++ run (13,3) 3 E ++
+>         run (12,4) 3 E ++ run (12,6) 3 N ++ run (11,7) 8 E ++ 
+>         run (9,12) 3 N ++ run (12,14) 1 N ++ run (12,8) 10 E ++
+>         run (0,19) 6 N ++ run (1,20) 6 N ++ run (7,18) 8 E ++
+>         run (8,17) 1 N ++ run (8,18) 3 E ++ run (9,17) 4 E ++ 
+>         run (10,18) 2 E ++ run (11,17) 2 E ++ run (10,20) 3 N ++
+>         run (11,19) 3 N ++ run (12,18) 2 N ++ run (13,17) 2 N ++
+>         run (13,13) 4 E ++ run (14,12) 7 N ++ run (13,11) 2 N ++
+>         run (14,10) 2 E ++ run (13,9)2 E ++ run (14,8) 3 N ++ 
+>         run (13,7) 3 N ++ run (15,5) 3 E ++ run (16,6) 3 E ++
+>         run (18,5) 4 N ++ run (16,4) 2 N ++ run (13,20) 2 E ++
+>         run (14,18) 4 E ++ run (20,2) 3 N ++ run (19,3) 2 E ++
+>         run (18,4) 2 E ++ run (23,4) 1 E ++ run (22,4) 1 N ++
+>         run (21,3) 1 N ++ run (20,4) 2 E ++ run (17,6) 4 N ++ 
+>         run (20,7) 2 E ++ run (21,7) 2 N ++ run (21,6) 1 E ++ 
+>         run (15,9) 1 E ++ run (17,8) 2 E ++ run (18,7) 2 E ++ 
+>         run (19,8) 2 E ++ run (21,9) 1 E ++ run (16,9) 6 N ++
+>         run (16,10) 7 N ++ run (15,11) 2 E ++ run (17,11) 5 N ++ 
+>         run (14,14) 3 E ++ run (15,15) 6 E ++ run (17,14) 4 E ++
+>         run (16,18) 4 E ++ run (15,17) 1 N ++ run (17,17) 3 N ++
+>         run (15,13) 7 N ++ run (21,12) 2 E ++ run (16,16) 1 N ++
+>         run (16,14) 1 N ++ run (17,15) 3 N ++ run (19,14) 4 N ++
+>         run (20,15) 5 E ++ run (19,16) 2 N ++ run (21,16) 5 E ++
+>         run (17,19) 2 E ++ run (18,20) 2 E ++ run (19,19) 2 E ++
+>         run (18,18) 2 N ++ run (20,20) 3 N;
+>   in makeMaze (23,22) (map fst (filter (isDir N) walls)) [] (map fst (filter (isDir E) walls)) []
+
+> isDir :: Direction -> Wall -> Bool
+> isDir dir wall = dir == d
+> 	where 	d = snd wall
+
+
+And now an impossible maze
+
+> impossibleMaze :: MyMaze
+> impossibleMaze =
+>   let walls = [((0,1), E), ((1,0),N), ((1,2), E), ((2,1), N)]
+>   in makeMaze (3,3) (map fst (filter (isDir N) walls)) [] (map fst (filter (isDir E) walls)) []
