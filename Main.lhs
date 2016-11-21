@@ -54,23 +54,23 @@ Solve the maze, giving a result of type:
 
 > solveMaze :: Maze -> Place -> Place -> Path
 > solveMaze maze start target = fastSolveMazeIter maze target queue visited
-> 	where 	queue = [(start, [])]
+> 	where  	queue = [(start, [])]
 > 		visited = []
 
 > fastSolveMazeIter :: Maze -> Place -> [PartialSolution] -> [Place] -> Path
 > fastSolveMazeIter maze target q visited
->       | currentPlace == target = currentPath
+> 	| currentPlace == target = currentPath
 > 	| currentPlace `elem` visited = if (length q == 1) then [] else fastSolveMazeIter maze target (tail q) visited -- [] if q is empty, else continue
->       | otherwise = fastSolveMazeIter maze target ((tail q) ++ (possibleMoves maze currentPlace currentPath)) (currentPlace:visited)
->       where   currentPlace = fst (head q)
->               currentPath = snd (head q)
+> 	| otherwise = fastSolveMazeIter maze target ((tail q) ++ (possibleMoves maze currentPlace currentPath)) (currentPlace:visited)
+> 		where  	currentPlace = fst (head q)
+>          		currentPath = snd (head q)
 
 > solveMazeIter :: Maze -> Place -> [PartialSolution] -> Path
 > solveMazeIter maze target q 
 > 	| currentPlace == target = currentPath
 > 	| otherwise = solveMazeIter maze target ((tail q) ++ (possibleMoves maze currentPlace currentPath) )
-> 	where 	currentPlace = fst (head q)
-> 		currentPath = snd (head q)
+> 		where  	currentPlace = fst (head q)
+> 			currentPath = snd (head q)
 
 > visited :: [Place]
 > visited = []
@@ -85,9 +85,9 @@ Solve the maze, giving a result of type:
 
 > validPos :: Maze -> PartialSolution -> Bool
 > validPos maze nextPos = (x<m && y<n) && (not (hasWall maze (x,y) d))
-> 	where 	(m,n) = sizeOf maze
+> 	where  	(m,n) = sizeOf maze
 >		(x,y) = fst nextPos
-> 		d = opposite (last (snd nextPos))
+>		d = opposite (last (snd nextPos))
  
 
 ======================================================================

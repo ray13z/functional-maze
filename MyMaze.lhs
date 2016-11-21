@@ -35,8 +35,8 @@ direction from a particular place:
 
 > hasWall :: MyMaze -> Place -> Direction -> Bool
 > hasWall (AMaze _ nwalls swalls ewalls wwalls) pos d 
-> 	| d == N = pos `elem` nwalls
->	| d == S = pos `elem` swalls
+>   | d == N = pos `elem` nwalls
+>   | d == S = pos `elem` swalls
 >   | d == E = pos `elem` ewalls
 >   | otherwise = pos `elem` wwalls
 
